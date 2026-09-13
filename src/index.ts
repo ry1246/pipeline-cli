@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { createInterface } from "node:readline";
 
 const program = new Command();
 
@@ -9,3 +10,9 @@ program
   .version("1.0.0");
 
 program.parse();
+
+const rl = createInterface({ input: process.stdin });
+
+rl.on("line", (line) => {
+  console.log(line)
+});
