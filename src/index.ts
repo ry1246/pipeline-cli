@@ -21,7 +21,14 @@ program.parse();
 
 const [file] = program.args;
 const { pattern, ignoreCase, invertMatch, status, level, count } = program.opts();
-const re = pattern ? new RegExp(pattern, ignoreCase ? "i" : undefined) : undefined;
+
+let re: RegExp | undefined;
+try {
+  re = pattern ? new RegExp(pattern, ignoreCase ? "i" : undefined) : undefined;
+} catch (err) {
+  console.error(`mylogfilter: 不正な正規表現です：${(err as Error).message}`);
+  process.exit(2);
+}
 
 const statusRe = /"[^"]*"\s+(\d{3})/;
 
@@ -37,6 +44,15 @@ function extractLevel(line: string): string | undefined {
 }
 
 const input = file ? createReadStream(file) : process.stdin;
+
+if (file) {
+    input.on("error", (err: NodeJS.ErrnoException) => {
+    const message = err.code === "ENOENT" ? "No such file or directory" : err.message;
+    console.error(`mylogfilter: ${file}: ${message}`);
+    process.exit(2);
+  });
+}
+
 const rl = createInterface({ input});
 
 let matchCount = 0;
@@ -46,9 +62,8 @@ rl.on("line", (line) => {
   const statusMatched = !status || extractStatus(line) === status;
   const levelMatched = !level || extractLevel(line)?.toLowerCase() === level.toLowerCase();
   if (patternMatched && statusMatched && levelMatched) {
-    if (count) {
-      matchCount++;
-    } else {
+    matchCount++;
+    if (!count) {
       console.log(line);
     }
   }
@@ -58,4 +73,5 @@ rl.on("close", () => {
   if (count) {
     console.log(matchCount);
   }
+  process.exitCode = matchCount > 0 ? 0 : 1;
 });
