@@ -12,11 +12,12 @@ program
   .option("-i, --ignore-case", "パターンまっちを大文字小文字無視で行う")
   .option("-v, --invert-match", "マッチしなかったら行を出力する（grepの-vと同じ）")
   .option("--status <code>", "combined log format のステータスコードでフィルタ")
-  .option("--level <level>", "ログレベル（[ERROR]やlevel=error形式)でフィルタ");
+  .option("--level <level>", "ログレベル（[ERROR]やlevel=error形式)でフィルタ")
+  .option("-c, --count", "マッチした行を出力せず、件数のみを出力する");
 
 program.parse();
 
-const { pattern, ignoreCase, invertMatch, status, level } = program.opts();
+const { pattern, ignoreCase, invertMatch, status, level, count } = program.opts();
 const re = pattern ? new RegExp(pattern, ignoreCase ? "i" : undefined) : undefined;
 
 const statusRe = /"[^"]*"\s+(\d{3})/;
@@ -34,11 +35,23 @@ function extractLevel(line: string): string | undefined {
 
 const rl = createInterface({ input: process.stdin });
 
+let matchCount = 0;
+
 rl.on("line", (line) => {
   const patternMatched = !re || re.test(line) !== !!invertMatch;
   const statusMatched = !status || extractStatus(line) === status;
   const levelMatched = !level || extractLevel(line)?.toLowerCase() === level.toLowerCase();
   if (patternMatched && statusMatched && levelMatched) {
-    console.log(line);
+    if (count) {
+      matchCount++;
+    } else {
+      console.log(line);
+    }
+  }
+});
+
+rl.on("close", () => {
+  if (count) {
+    console.log(matchCount);
   }
 });
