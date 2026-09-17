@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { createInterface } from "node:readline";
+import { createReadStream } from "node:fs";
 
 const program = new Command();
 
@@ -8,6 +9,7 @@ program
   .name("mylogfilter")
   .description("パイプで渡されたログをフィルタするCLI")
   .version("1.0.0")
+  .argument("[file]", "フィルタ対象のファイル（未指定時はstdinを読む）")
   .option("-p, --pattern <regex>", "指定した正規表現にマッチする行だけを出力")
   .option("-i, --ignore-case", "パターンまっちを大文字小文字無視で行う")
   .option("-v, --invert-match", "マッチしなかったら行を出力する（grepの-vと同じ）")
@@ -17,6 +19,7 @@ program
 
 program.parse();
 
+const [file] = program.args;
 const { pattern, ignoreCase, invertMatch, status, level, count } = program.opts();
 const re = pattern ? new RegExp(pattern, ignoreCase ? "i" : undefined) : undefined;
 
@@ -33,7 +36,8 @@ function extractLevel(line: string): string | undefined {
   return levelKvRe.exec(line)?.[1] || levelBracketRe.exec(line)?.[1];
 }
 
-const rl = createInterface({ input: process.stdin });
+const input = file ? createReadStream(file) : process.stdin;
+const rl = createInterface({ input});
 
 let matchCount = 0;
 
