@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import { createInterface } from "node:readline";
 import { createReadStream } from "node:fs";
+import { extractStatus, extractLevel } from './extract.js';
 
 const program = new Command();
 
@@ -28,19 +29,6 @@ try {
 } catch (err) {
   console.error(`mylogfilter: 不正な正規表現です：${(err as Error).message}`);
   process.exit(2);
-}
-
-const statusRe = /"[^"]*"\s+(\d{3})/;
-
-function extractStatus(line: string): string | undefined {
-  return statusRe.exec(line)?.[1];
-}
-
-const levelKvRe = /level=(\S+)/i;
-const levelBracketRe = /\[(\w+)\]/;
-
-function extractLevel(line: string): string | undefined {
-  return levelKvRe.exec(line)?.[1] || levelBracketRe.exec(line)?.[1];
 }
 
 const input = file ? createReadStream(file) : process.stdin;
