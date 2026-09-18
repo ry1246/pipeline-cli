@@ -23,5 +23,8 @@
   },
   "bin": {
     "mylogfilter": "./dist/index.js"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }
